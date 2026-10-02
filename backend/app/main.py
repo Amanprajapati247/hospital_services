@@ -18,12 +18,26 @@ from app.api.routers import (
     health
 )
 
-# Initialize database schema
-Base.metadata.create_all(bind=engine)
+import time
 
-# Seed initial data
-with SessionLocal() as db:
-    seed_database(db)
+# Initialize database schema and seeds with connection retry
+def init_database():
+    retries = 5
+    while retries > 0:
+        try:
+            Base.metadata.create_all(bind=engine)
+            with SessionLocal() as db:
+                seed_database(db)
+            print("Database connected and initialized successfully.")
+            break
+        except Exception as e:
+            retries -= 1
+            print(f"Waiting for database to be ready ({retries} retries remaining)... Error: {e}")
+            if retries == 0:
+                raise e
+            time.sleep(2)
+
+init_database()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

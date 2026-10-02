@@ -1,4 +1,21 @@
 services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: careconnect
+      POSTGRES_PASSWORD: careconnect_password_2026
+      POSTGRES_DB: careconnect_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careconnect -d careconnect_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -6,10 +23,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./careconnect.db
+      - DATABASE_URL=postgresql://careconnect:careconnect_password_2026@db:5432/careconnect_db
       - JWT_SECRET=careconnect-ai-indore-healthcare-secret-key-2026
-    volumes:
-      - backend-data:/app
+    depends_on:
+      db:
+        condition: service_healthy
 
   frontend:
     build:
@@ -21,4 +39,4 @@ services:
       - backend
 
 volumes:
-  backend-data:
+  postgres-data:
