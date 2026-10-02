@@ -9,7 +9,7 @@ import {
   User 
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || '/api';
 
 function getAuthHeader(): HeadersInit {
   const token = localStorage.getItem('careconnect_token');
