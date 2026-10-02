@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -38,6 +38,7 @@ export const HomePage: React.FC = () => {
   const [aiListening, setAiListening] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<any | null>(null);
+  const aiResultRef = useRef<HTMLDivElement>(null);
 
   // Booking modal state
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
@@ -61,13 +62,16 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  const handleAiSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAiSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!aiInput.trim()) return;
     setAiLoading(true);
     try {
       const res = await api.chatHealthAi(aiInput.trim(), 'Indore');
       setAiResult(res);
+      setTimeout(() => {
+        aiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     } catch (err) {
       console.error('AI chat failed', err);
     } finally {
@@ -228,6 +232,14 @@ export const HomePage: React.FC = () => {
               <textarea
                 value={aiInput}
                 onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (aiInput.trim() && !aiLoading) {
+                      handleAiSubmit();
+                    }
+                  }
+                }}
                 placeholder="e.g. 'Mujhe 2 din se chest pain aur ghabrahat ho rahi hai' OR 'Need an orthopedic specialist for knee pain under ₹1000 in Indore'..."
                 rows={3}
                 className="w-full bg-transparent text-white placeholder-slate-400 text-sm focus:outline-hidden p-2 resize-none"
@@ -287,7 +299,7 @@ export const HomePage: React.FC = () => {
 
           {/* AI Result Card if generated on homepage */}
           {aiResult && (
-            <div className="mt-6 p-5 rounded-2xl bg-white text-slate-900 shadow-2xl animate-in fade-in duration-300 border border-teal-200">
+            <div ref={aiResultRef} className="mt-6 p-5 rounded-2xl bg-white text-slate-900 shadow-2xl animate-in fade-in duration-300 border border-teal-200">
               
               {/* Emergency Banner */}
               {aiResult.is_emergency && (

@@ -44,10 +44,19 @@ export const AiAssistantPage: React.FC = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   }, [messages, loading]);
 
   const handleSend = async (textToSend?: string) => {
@@ -168,7 +177,7 @@ export const AiAssistantPage: React.FC = () => {
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto space-y-4 pr-1">
         {messages.map((m) => (
           <div
             key={m.id}
@@ -319,8 +328,6 @@ export const AiAssistantPage: React.FC = () => {
             <span>CareConnect AI is evaluating symptoms and checking hospital availability...</span>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Form */}
@@ -340,6 +347,12 @@ export const AiAssistantPage: React.FC = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder={listening ? "Listening in Hindi/English..." : "Type your symptoms in English, Hindi, or Hinglish (e.g. 'Mujhe chest pain hai')..."}
           className="flex-1 text-xs sm:text-sm bg-transparent focus:outline-hidden text-slate-900 placeholder-slate-400 px-2"
         />
