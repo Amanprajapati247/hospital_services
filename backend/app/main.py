@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from app.core.config import settings
-from app.database.session import engine, Base, SessionLocal
+from app.database.session import engine, Base, SessionLocal, get_db
+from app.database import models
 from app.seeds.seed_data import seed_database
 from app.api.routers import (
     auth,
@@ -56,19 +58,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Routers under /api
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(hospitals.router, prefix=settings.API_V1_STR)
-app.include_router(doctors.router, prefix=settings.API_V1_STR)
-app.include_router(appointments.router, prefix=settings.API_V1_STR)
-app.include_router(ai.router, prefix=settings.API_V1_STR)
-app.include_router(emergency.router, prefix=settings.API_V1_STR)
-app.include_router(hospital_admin.router, prefix=settings.API_V1_STR)
-app.include_router(doctor_portal.router, prefix=settings.API_V1_STR)
-app.include_router(patient.router, prefix=settings.API_V1_STR)
-app.include_router(admin.router, prefix=settings.API_V1_STR)
-app.include_router(insurance_schemes.router, prefix=settings.API_V1_STR)
-app.include_router(health.router, prefix=settings.API_V1_STR)
+# Routers list
+routers = [
+    auth.router,
+    hospitals.router,
+    doctors.router,
+    appointments.router,
+    ai.router,
+    emergency.router,
+    hospital_admin.router,
+    doctor_portal.router,
+    patient.router,
+    admin.router,
+    insurance_schemes.router,
+    health.router,
+]
+
+# Include Routers under /api and without prefix for resilient routing
+for r in routers:
+    app.include_router(r, prefix=settings.API_V1_STR)
+    app.include_router(r)
 
 @app.get("/")
 def root():
@@ -81,5 +90,35 @@ def root():
     }
 
 @app.get("/api/health-check")
-def health_check():
-    return {"status": "healthy", "city": "Indore", "database": "connected"}
+@app.get("/health-check")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        h_count = db.query(models.Hospital).count()
+        d_count = db.query(models.Doctor).count()
+        u_count = db.query(models.User).count()
+        return {
+            "status": "healthy",
+            "city": "Indore",
+            "database": "connected",
+            "hospitals_count": h_count,
+            "doctors_count": d_count,
+            "users_count": u_count
+        }
+    except Exception as e:
+        return {"status": "degraded", "error": str(e)}
+
+@app.get("/api/seed")
+@app.get("/seed")
+def trigger_seed(db: Session = Depends(get_db)):
+    try:
+        seed_database(db, force=True)
+        h_count = db.query(models.Hospital).count()
+        d_count = db.query(models.Doctor).count()
+        return {
+            "status": "success",
+            "message": "Database seeded successfully",
+            "hospitals_count": h_count,
+            "doctors_count": d_count
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

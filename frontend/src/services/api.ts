@@ -9,7 +9,18 @@ import {
   User 
 } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') || '/api';
+function getApiBase(): string {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
+  if (!envUrl) {
+    return '/api';
+  }
+  if (!envUrl.endsWith('/api')) {
+    return `${envUrl}/api`;
+  }
+  return envUrl;
+}
+
+export const API_BASE = getApiBase();
 
 function getAuthHeader(): HeadersInit {
   const token = localStorage.getItem('careconnect_token');
@@ -17,8 +28,14 @@ function getAuthHeader(): HeadersInit {
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    throw new Error(
+      `Received HTML response from API (${res.url}). Please ensure VITE_API_URL is configured in your frontend environment settings to point to your Render backend (e.g. https://your-backend.onrender.com/api).`
+    );
+  }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'Network error' }));
+    const err = await res.json().catch(() => ({ detail: `HTTP error ${res.status}: ${res.statusText}` }));
     throw new Error(err.detail || 'An error occurred');
   }
   return res.json();

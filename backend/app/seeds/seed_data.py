@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from app.database import models
 from app.core.security import get_password_hash
 
-def seed_database(db: Session):
-    # Check if already seeded
-    if db.query(models.Hospital).first():
-        print("Database already contains records. Skipping seed.")
+def seed_database(db: Session, force: bool = False):
+    # Check if already fully seeded
+    if not force and db.query(models.Hospital).count() >= 7:
+        print("Database already contains all hospitals. Skipping seed.")
         return
 
     print("Seeding CareConnect AI database with realistic Indore healthcare data...")
@@ -14,114 +14,113 @@ def seed_database(db: Session):
     # 1. Users
     pwd_hash = get_password_hash("password123")
     
-    patient_user = models.User(
-        email="patient@careconnect.in",
-        hashed_password=pwd_hash,
-        full_name="Abhishek Sharma",
-        phone="+91 98260 12345",
-        role="patient",
-        is_active=True
-    )
-    
-    doctor_user = models.User(
-        email="doctor@careconnect.in",
-        hashed_password=pwd_hash,
-        full_name="Dr. Rajesh Verma",
-        phone="+91 98260 23456",
-        role="doctor",
-        is_active=True
-    )
-    
-    hospital_user = models.User(
-        email="hospital@careconnect.in",
-        hashed_password=pwd_hash,
-        full_name="Medanta Indore Administrator",
-        phone="+91 731-255-8000",
-        role="hospital_admin",
-        is_active=True
-    )
-    
-    admin_user = models.User(
-        email="admin@careconnect.in",
-        hashed_password=pwd_hash,
-        full_name="Platform Administrator",
-        phone="+91 98260 99999",
-        role="platform_admin",
-        is_active=True
-    )
-    
-    db.add_all([patient_user, doctor_user, hospital_user, admin_user])
-    db.commit()
+    def get_or_create_user(email, full_name, phone, role):
+        u = db.query(models.User).filter(models.User.email == email).first()
+        if not u:
+            u = models.User(
+                email=email,
+                hashed_password=pwd_hash,
+                full_name=full_name,
+                phone=phone,
+                role=role,
+                is_active=True
+            )
+            db.add(u)
+            db.commit()
+            db.refresh(u)
+        return u
+
+    patient_user = get_or_create_user("patient@careconnect.in", "Abhishek Sharma", "+91 98260 12345", "patient")
+    doctor_user = get_or_create_user("doctor@careconnect.in", "Dr. Rajesh Verma", "+91 98260 23456", "doctor")
+    hospital_user = get_or_create_user("hospital@careconnect.in", "Medanta Indore Administrator", "+91 731-255-8000", "hospital_admin")
+    admin_user = get_or_create_user("admin@careconnect.in", "Platform Administrator", "+91 98260 99999", "platform_admin")
 
     # 2. Patient Profile & Family
-    patient_profile = models.PatientProfile(
-        user_id=patient_user.id,
-        age=34,
-        gender="Male",
-        blood_group="B+",
-        city="Indore",
-        address="142, Scheme 54, Near Meghdoot Garden, Vijay Nagar, Indore",
-        emergency_contact="+91 98260 98765",
-        preferred_language="Hindi / English",
-        insurance_name="Star Health Comprehensive",
-        insurance_policy_no="SH-IND-2024-8841"
-    )
-    db.add(patient_profile)
-    db.commit()
+    patient_profile = db.query(models.PatientProfile).filter(models.PatientProfile.user_id == patient_user.id).first()
+    if not patient_profile:
+        patient_profile = models.PatientProfile(
+            user_id=patient_user.id,
+            age=34,
+            gender="Male",
+            blood_group="B+",
+            city="Indore",
+            address="142, Scheme 54, Near Meghdoot Garden, Vijay Nagar, Indore",
+            emergency_contact="+91 98260 98765",
+            preferred_language="Hindi / English",
+            insurance_name="Star Health Comprehensive",
+            insurance_policy_no="SH-IND-2024-8841"
+        )
+        db.add(patient_profile)
+        db.commit()
+        db.refresh(patient_profile)
 
-    family_members = [
-        models.FamilyMember(patient_id=patient_profile.id, name="Ramakant Sharma", relationship="Father", age=68, gender="Male", blood_group="O+"),
-        models.FamilyMember(patient_id=patient_profile.id, name="Sharda Sharma", relationship="Mother", age=63, gender="Female", blood_group="B+"),
-        models.FamilyMember(patient_id=patient_profile.id, name="Neha Sharma", relationship="Spouse", age=32, gender="Female", blood_group="A+"),
-        models.FamilyMember(patient_id=patient_profile.id, name="Aarav Sharma", relationship="Child", age=6, gender="Male", blood_group="B+")
-    ]
-    db.add_all(family_members)
-    db.commit()
+        family_members = [
+            models.FamilyMember(patient_id=patient_profile.id, name="Ramakant Sharma", relationship="Father", age=68, gender="Male", blood_group="O+"),
+            models.FamilyMember(patient_id=patient_profile.id, name="Sharda Sharma", relationship="Mother", age=63, gender="Female", blood_group="B+"),
+            models.FamilyMember(patient_id=patient_profile.id, name="Neha Sharma", relationship="Spouse", age=32, gender="Female", blood_group="A+"),
+            models.FamilyMember(patient_id=patient_profile.id, name="Aarav Sharma", relationship="Child", age=6, gender="Male", blood_group="B+")
+        ]
+        db.add_all(family_members)
+        db.commit()
 
     # 3. Insurance Providers
-    insurances = [
-        models.InsuranceProvider(name="Star Health Insurance", code="STAR_HEALTH", toll_free="1800-425-2255", cashless_support=True),
-        models.InsuranceProvider(name="HDFC ERGO Health", code="HDFC_ERGO", toll_free="1800-266-6444", cashless_support=True),
-        models.InsuranceProvider(name="Care Health Insurance (Religare)", code="CARE_HEALTH", toll_free="1800-102-4488", cashless_support=True),
-        models.InsuranceProvider(name="ICICI Lombard General", code="ICICI_LOMBARD", toll_free="1800-2666", cashless_support=True),
-        models.InsuranceProvider(name="Niva Bupa Health Insurance", code="NIVA_BUPA", toll_free="1860-500-8888", cashless_support=True),
-        models.InsuranceProvider(name="The New India Assurance", code="NEW_INDIA", toll_free="1800-209-1415", cashless_support=True)
+    insurance_data = [
+        {"name": "Star Health Insurance", "code": "STAR_HEALTH", "toll_free": "1800-425-2255", "cashless_support": True},
+        {"name": "HDFC ERGO Health", "code": "HDFC_ERGO", "toll_free": "1800-266-6444", "cashless_support": True},
+        {"name": "Care Health Insurance (Religare)", "code": "CARE_HEALTH", "toll_free": "1800-102-4488", "cashless_support": True},
+        {"name": "ICICI Lombard General", "code": "ICICI_LOMBARD", "toll_free": "1800-2666", "cashless_support": True},
+        {"name": "Niva Bupa Health Insurance", "code": "NIVA_BUPA", "toll_free": "1860-500-8888", "cashless_support": True},
+        {"name": "The New India Assurance", "code": "NEW_INDIA", "toll_free": "1800-209-1415", "cashless_support": True}
     ]
-    db.add_all(insurances)
-    db.commit()
+    insurances = []
+    for idat in insurance_data:
+        ins = db.query(models.InsuranceProvider).filter(models.InsuranceProvider.code == idat["code"]).first()
+        if not ins:
+            ins = models.InsuranceProvider(**idat)
+            db.add(ins)
+            db.commit()
+            db.refresh(ins)
+        insurances.append(ins)
 
     # 4. Government Schemes
-    schemes = [
-        models.GovernmentScheme(
-            name="Ayushman Bharat - Pradhan Mantri Jan Arogya Yojana (PM-JAY)",
-            short_name="PM-JAY",
-            description="Flagship national health protection scheme providing secondary and tertiary care hospitalization coverage.",
-            eligibility="Deprivation and occupational criteria for rural and urban areas as per SECC 2011 database, plus state-expanded PM-JAY ration card holders.",
-            coverage_amount="₹5,00,000 per family per year",
-            documents_required="Ayushman Bharat Golden Card, Aadhaar Card, Samagra ID, Ration Card.",
-            official_portal="https://pmjay.gov.in"
-        ),
-        models.GovernmentScheme(
-            name="Deen Dayal Swasthya Suraksha Yojana (Madhya Pradesh)",
-            short_name="Deen Dayal Yojna",
-            description="State-sponsored cashless healthcare assistance program for economically vulnerable families in Madhya Pradesh.",
-            eligibility="BPL cardholders and registered unorganized sector workers in Madhya Pradesh.",
-            coverage_amount="Up to ₹2,50,000 per family/year",
-            documents_required="BPL Card, MP Samagra Family ID, Domicile Certificate, Aadhaar.",
-            official_portal="https://health.mp.gov.in"
-        ),
-        models.GovernmentScheme(
-            name="Madhya Pradesh State Employee Health Scheme",
-            short_name="MP Employee Health",
-            description="Comprehensive cashless hospitalization coverage for state government employees, pensioners and accredited journalists.",
-            eligibility="Permanent MP State Government employees, retired pensioners, and recognized dependents.",
-            coverage_amount="₹10,00,000 for critical illness, ₹5,00,000 general",
-            documents_required="Employee Health Card, Employee PPO / Treasury Code ID, Aadhaar.",
-            official_portal="https://health.mp.gov.in/employee"
-        )
+    schemes_data = [
+        {
+            "name": "Ayushman Bharat - Pradhan Mantri Jan Arogya Yojana (PM-JAY)",
+            "short_name": "PM-JAY",
+            "description": "Flagship national health protection scheme providing secondary and tertiary care hospitalization coverage.",
+            "eligibility": "Deprivation and occupational criteria for rural and urban areas as per SECC 2011 database, plus state-expanded PM-JAY ration card holders.",
+            "coverage_amount": "₹5,00,000 per family per year",
+            "documents_required": "Ayushman Bharat Golden Card, Aadhaar Card, Samagra ID, Ration Card.",
+            "official_portal": "https://pmjay.gov.in"
+        },
+        {
+            "name": "Deen Dayal Swasthya Suraksha Yojana (Madhya Pradesh)",
+            "short_name": "Deen Dayal Yojna",
+            "description": "State-sponsored cashless healthcare assistance program for economically vulnerable families in Madhya Pradesh.",
+            "eligibility": "BPL cardholders and registered unorganized sector workers in Madhya Pradesh.",
+            "coverage_amount": "Up to ₹2,50,000 per family/year",
+            "documents_required": "BPL Card, MP Samagra Family ID, Domicile Certificate, Aadhaar.",
+            "official_portal": "https://health.mp.gov.in"
+        },
+        {
+            "name": "Madhya Pradesh State Employee Health Scheme",
+            "short_name": "MP Employee Health",
+            "description": "Comprehensive cashless hospitalization coverage for state government employees, pensioners and accredited journalists.",
+            "eligibility": "Permanent MP State Government employees, retired pensioners, and recognized dependents.",
+            "coverage_amount": "₹10,00,000 for critical illness, ₹5,00,000 general",
+            "documents_required": "Employee Health Card, Employee PPO / Treasury Code ID, Aadhaar.",
+            "official_portal": "https://health.mp.gov.in/employee"
+        }
     ]
-    db.add_all(schemes)
-    db.commit()
+    schemes = []
+    for sdat in schemes_data:
+        sc = db.query(models.GovernmentScheme).filter(models.GovernmentScheme.short_name == sdat["short_name"]).first()
+        if not sc:
+            sc = models.GovernmentScheme(**sdat)
+            db.add(sc)
+            db.commit()
+            db.refresh(sc)
+        schemes.append(sc)
 
     # 5. Realistic Indore Hospitals
     hospitals_data = [
@@ -358,94 +357,98 @@ def seed_database(db: Session):
 
     hosp_objects = []
     for hd in hospitals_data:
-        h = models.Hospital(
-            admin_user_id=hd["admin_user_id"],
-            name=hd["name"],
-            slug=hd["slug"],
-            registration_no=hd["registration_no"],
-            description=hd["description"],
-            address=hd["address"],
-            area=hd["area"],
-            city=hd["city"],
-            phone=hd["phone"],
-            emergency_phone=hd["emergency_phone"],
-            email=hd["email"],
-            website=hd["website"],
-            latitude=hd["latitude"],
-            longitude=hd["longitude"],
-            hospital_type=hd["hospital_type"],
-            verified=hd["verified"],
-            verification_status=hd["verification_status"],
-            rating=hd["rating"],
-            review_count=hd["review_count"],
-            starting_fee=hd["starting_fee"],
-            est_treatment_min=hd["est_treatment_min"],
-            est_treatment_max=hd["est_treatment_max"],
-            opd_wait_time=hd["opd_wait_time"],
-            emergency_wait_time=hd["emergency_wait_time"],
-            image_url=hd["image_url"],
-            cover_image=hd["cover_image"],
-            is_emergency_active=True
-        )
-        db.add(h)
-        db.commit()
+        h = db.query(models.Hospital).filter(models.Hospital.slug == hd["slug"]).first()
+        if not h:
+            h = models.Hospital(
+                admin_user_id=hd["admin_user_id"],
+                name=hd["name"],
+                slug=hd["slug"],
+                registration_no=hd["registration_no"],
+                description=hd["description"],
+                address=hd["address"],
+                area=hd["area"],
+                city=hd["city"],
+                phone=hd["phone"],
+                emergency_phone=hd["emergency_phone"],
+                email=hd["email"],
+                website=hd["website"],
+                latitude=hd["latitude"],
+                longitude=hd["longitude"],
+                hospital_type=hd["hospital_type"],
+                verified=hd["verified"],
+                verification_status=hd["verification_status"],
+                rating=hd["rating"],
+                review_count=hd["review_count"],
+                starting_fee=hd["starting_fee"],
+                est_treatment_min=hd["est_treatment_min"],
+                est_treatment_max=hd["est_treatment_max"],
+                opd_wait_time=hd["opd_wait_time"],
+                emergency_wait_time=hd["emergency_wait_time"],
+                image_url=hd["image_url"],
+                cover_image=hd["cover_image"],
+                is_emergency_active=True
+            )
+            db.add(h)
+            db.commit()
+            db.refresh(h)
+
+            # Bed inventory
+            b = hd["beds"]
+            bed_inv = models.BedInventory(
+                hospital_id=h.id,
+                general_total=b["general_total"],
+                general_avail=b["general_avail"],
+                private_total=b["private_total"],
+                private_avail=b["private_avail"],
+                icu_total=b["icu_total"],
+                icu_avail=b["icu_avail"],
+                nicu_total=b["nicu_total"],
+                nicu_avail=b["nicu_avail"],
+                emergency_total=b["emergency_total"],
+                emergency_avail=b["emergency_avail"],
+                ventilator_total=b["ventilator_total"],
+                ventilator_avail=b["ventilator_avail"]
+            )
+            db.add(bed_inv)
+
+            # Ambulances
+            for amb in hd["ambulances"]:
+                db.add(models.HospitalAmbulance(
+                    hospital_id=h.id,
+                    ambulance_type=amb["type"],
+                    vehicle_number=amb["veh"],
+                    driver_contact=amb["contact"],
+                    is_available=amb["avail"]
+                ))
+
+            # Standard Departments
+            depts = ["Cardiology", "Orthopedics", "Neurology", "Pediatrics", "Gynecology", "Dermatology", "General Medicine", "Gastroenterology", "Emergency & Trauma"]
+            for dept in depts:
+                db.add(models.HospitalDepartment(
+                    hospital_id=h.id,
+                    name=dept,
+                    description=f"Advanced Department of {dept} with dedicated consultation, procedural suites, and inpatient beds.",
+                    hod_name=f"Dr. Senior Consultant ({dept})",
+                    opd_timings="09:30 AM - 04:30 PM",
+                    emergency_ready=True
+                ))
+
+            # Facilities
+            facs = ["24x7 Emergency", "ICU & Critical Care", "NICU", "Operation Theatres", "CT Scan & MRI", "In-House Pharmacy", "Blood Bank", "Dialysis Unit", "Digital X-Ray"]
+            for fac in facs:
+                db.add(models.HospitalFacility(hospital_id=h.id, facility_name=fac))
+
+            # Link Insurances
+            for ins in insurances:
+                db.add(models.HospitalInsurance(hospital_id=h.id, insurance_id=ins.id, is_cashless=True))
+
+            # Link Schemes
+            for sc in schemes:
+                db.add(models.HospitalScheme(hospital_id=h.id, scheme_id=sc.id, is_empanelled=True))
+
+            db.commit()
+
         hosp_objects.append(h)
-
-        # Bed inventory
-        b = hd["beds"]
-        bed_inv = models.BedInventory(
-            hospital_id=h.id,
-            general_total=b["general_total"],
-            general_avail=b["general_avail"],
-            private_total=b["private_total"],
-            private_avail=b["private_avail"],
-            icu_total=b["icu_total"],
-            icu_avail=b["icu_avail"],
-            nicu_total=b["nicu_total"],
-            nicu_avail=b["nicu_avail"],
-            emergency_total=b["emergency_total"],
-            emergency_avail=b["emergency_avail"],
-            ventilator_total=b["ventilator_total"],
-            ventilator_avail=b["ventilator_avail"]
-        )
-        db.add(bed_inv)
-
-        # Ambulances
-        for amb in hd["ambulances"]:
-            db.add(models.HospitalAmbulance(
-                hospital_id=h.id,
-                ambulance_type=amb["type"],
-                vehicle_number=amb["veh"],
-                driver_contact=amb["contact"],
-                is_available=amb["avail"]
-            ))
-
-        # Standard Departments
-        depts = ["Cardiology", "Orthopedics", "Neurology", "Pediatrics", "Gynecology", "Dermatology", "General Medicine", "Gastroenterology", "Emergency & Trauma"]
-        for dept in depts:
-            db.add(models.HospitalDepartment(
-                hospital_id=h.id,
-                name=dept,
-                description=f"Advanced Department of {dept} with dedicated consultation, procedural suites, and inpatient beds.",
-                hod_name=f"Dr. Senior Consultant ({dept})",
-                opd_timings="09:30 AM - 04:30 PM",
-                emergency_ready=True
-            ))
-
-        # Facilities
-        facs = ["24x7 Emergency", "ICU & Critical Care", "NICU", "Operation Theatres", "CT Scan & MRI", "In-House Pharmacy", "Blood Bank", "Dialysis Unit", "Digital X-Ray"]
-        for fac in facs:
-            db.add(models.HospitalFacility(hospital_id=h.id, facility_name=fac))
-
-        # Link Insurances
-        for ins in insurances:
-            db.add(models.HospitalInsurance(hospital_id=h.id, insurance_id=ins.id, is_cashless=True))
-
-        # Link Schemes
-        for sc in schemes:
-            db.add(models.HospitalScheme(hospital_id=h.id, scheme_id=sc.id, is_empanelled=True))
-
-    db.commit()
 
     # 6. Doctors
     doctors_data = [
@@ -576,176 +579,192 @@ def seed_database(db: Session):
         }
     ]
 
+    doc_objects = []
     for dd in doctors_data:
-        doc = models.Doctor(
-            user_id=dd["user_id"],
-            name=dd["name"],
-            qualification=dd["qualification"],
-            experience_years=dd["experience_years"],
-            specialization=dd["specialization"],
-            registration_council=dd["registration_council"],
-            registration_number=dd["registration_number"],
-            about=dd["about"],
-            languages=dd["languages"],
-            photo_url=dd["photo_url"],
-            rating=dd["rating"],
-            review_count=dd["review_count"],
-            verified=True,
-            verification_status="verified"
-        )
-        db.add(doc)
-        db.commit()
+        doc = db.query(models.Doctor).filter(models.Doctor.name == dd["name"]).first()
+        if not doc:
+            doc = models.Doctor(
+                user_id=dd["user_id"],
+                name=dd["name"],
+                qualification=dd["qualification"],
+                experience_years=dd["experience_years"],
+                specialization=dd["specialization"],
+                registration_council=dd["registration_council"],
+                registration_number=dd["registration_number"],
+                about=dd["about"],
+                languages=dd["languages"],
+                photo_url=dd["photo_url"],
+                rating=dd["rating"],
+                review_count=dd["review_count"],
+                verified=True,
+                verification_status="verified"
+            )
+            db.add(doc)
+            db.commit()
+            db.refresh(doc)
 
-        for aff in dd["affiliations"]:
-            target_hosp = hosp_objects[aff["hosp_idx"]]
-            db.add(models.DoctorHospitalAffiliation(
-                doctor_id=doc.id,
-                hospital_id=target_hosp.id,
-                department=aff["dept"],
-                consultation_fee=aff["fee"],
-                days_of_week=aff["days"],
-                opd_timings=aff["time"],
-                is_active=True
-            ))
-        db.commit()
+            for aff in dd["affiliations"]:
+                if aff["hosp_idx"] < len(hosp_objects):
+                    target_hosp = hosp_objects[aff["hosp_idx"]]
+                    db.add(models.DoctorHospitalAffiliation(
+                        doctor_id=doc.id,
+                        hospital_id=target_hosp.id,
+                        department=aff["dept"],
+                        consultation_fee=aff["fee"],
+                        days_of_week=aff["days"],
+                        opd_timings=aff["time"],
+                        is_active=True
+                    ))
+            db.commit()
+        doc_objects.append(doc)
 
     # 7. Sample Initial Appointments for Demo Patient
-    app1 = models.Appointment(
-        appointment_number="CC-IND-2026-09191",
-        patient_id=patient_user.id,
-        doctor_id=1,  # Dr. Rajesh Verma
-        hospital_id=1,  # Medanta Indore
-        family_member_name="Self",
-        department="Cardiology",
-        appointment_date="2026-09-21",
-        appointment_time="11:30 AM",
-        consultation_fee=800,
-        status="Confirmed",
-        payment_status="Pay at Hospital",
-        insurance_name="Star Health Comprehensive",
-        patient_notes="Routine 6-month blood pressure review and mild exertion checkup."
-    )
-    
-    app2 = models.Appointment(
-        appointment_number="CC-IND-2026-09192",
-        patient_id=patient_user.id,
-        doctor_id=2,  # Dr. Priya Malviya
-        hospital_id=6,  # Shalby
-        family_member_name="Ramakant Sharma (Father)",
-        department="Orthopedics",
-        appointment_date="2026-09-24",
-        appointment_time="12:00 PM",
-        consultation_fee=750,
-        status="Confirmed",
-        payment_status="Pay at Hospital",
-        insurance_name="Star Health Comprehensive",
-        patient_notes="Father experiencing bilateral knee stiffness for 3 weeks."
-    )
-    db.add_all([app1, app2])
-    db.commit()
+    if db.query(models.Appointment).count() == 0 and hosp_objects and doc_objects:
+        app1 = models.Appointment(
+            appointment_number="CC-IND-2026-09191",
+            patient_id=patient_user.id,
+            doctor_id=doc_objects[0].id,
+            hospital_id=hosp_objects[0].id,
+            family_member_name="Self",
+            department="Cardiology",
+            appointment_date="2026-09-21",
+            appointment_time="11:30 AM",
+            consultation_fee=800,
+            status="Confirmed",
+            payment_status="Pay at Hospital",
+            insurance_name="Star Health Comprehensive",
+            patient_notes="Routine 6-month blood pressure review and mild exertion checkup."
+        )
+        
+        target_hosp2 = hosp_objects[5] if len(hosp_objects) > 5 else hosp_objects[0]
+        target_doc2 = doc_objects[1] if len(doc_objects) > 1 else doc_objects[0]
+        app2 = models.Appointment(
+            appointment_number="CC-IND-2026-09192",
+            patient_id=patient_user.id,
+            doctor_id=target_doc2.id,
+            hospital_id=target_hosp2.id,
+            family_member_name="Ramakant Sharma (Father)",
+            department="Orthopedics",
+            appointment_date="2026-09-24",
+            appointment_time="12:00 PM",
+            consultation_fee=750,
+            status="Confirmed",
+            payment_status="Pay at Hospital",
+            insurance_name="Star Health Comprehensive",
+            patient_notes="Father experiencing bilateral knee stiffness for 3 weeks."
+        )
+        db.add_all([app1, app2])
+        db.commit()
 
     # 8. Health Articles & Guides
-    articles = [
-        models.HealthArticle(
-            slug="dengue-prevention-and-care-indore",
-            title="Dengue Awareness & Platelet Care: What You Must Know in Malwa",
-            category="Seasonal infections",
-            summary="Essential medical guide on identifying early warning signs of dengue, platelet count monitoring, and hydration protocols.",
-            symptoms="High fever (103°F+), severe headache, retro-orbital pain (behind the eyes), joint aches, and petechial rashes.",
-            causes="Transmission via infected Aedes aegypti mosquitoes breeding in stagnant freshwater.",
-            prevention="Prevent water accumulation in coolers and flowerpots, use DEET mosquito repellents, and wear covered clothing.",
-            when_to_see_doctor="Seek emergency evaluation immediately if you observe persistent vomiting, severe abdominal pain, gum bleeding, or platelet drop below 50,000.",
-            relevant_specialty="General Medicine",
-            read_time="4 min read",
-            is_trending=True
-        ),
-        models.HealthArticle(
-            slug="cardiac-health-winter-alert",
-            title="Heart Health & Cold Weather: Managing Blood Pressure & Cardiac Strain",
-            category="Heart health",
-            summary="Understanding why cold weather constricts blood vessels, raises blood pressure, and increases cardiac workload.",
-            symptoms="Morning chest tightness, shortness of breath upon brisk walking, palpitations, or lightheadedness.",
-            causes="Vasoconstriction due to low ambient temperatures causing elevated systemic vascular resistance.",
-            prevention="Avoid vigorous early morning walks during peak cold; exercise indoors, monitor BP daily, and stay warm.",
-            when_to_see_doctor="Any chest pressure, crushing pain radiating to the left arm or jaw, or sudden breathlessness requires immediate emergency attention.",
-            relevant_specialty="Cardiology",
-            read_time="5 min read",
-            is_trending=True
-        ),
-        models.HealthArticle(
-            slug="diabetes-and-lifestyle-management",
-            title="Comprehensive Diabetes Management: Diet, HbA1c & Kidney Protection",
-            category="Diabetes",
-            summary="Practical guidelines for managing Type 2 diabetes, monitoring HbA1c every 3 months, and preventing diabetic retinopathy & nephropathy.",
-            symptoms="Frequent urination (polyuria), increased thirst (polydipsia), unexplained weight loss, and slow wound healing.",
-            causes="Insulin resistance and relative insulin deficiency compounded by sedentary lifestyle and high-glycemic diets.",
-            prevention="Balanced high-fiber meals, 45 minutes daily physical activity, and routine glycemic screening.",
-            when_to_see_doctor="Fasting blood glucose consistently > 140 mg/dL, foot ulcers, or visual blurriness.",
-            relevant_specialty="General Medicine",
-            read_time="6 min read",
-            is_trending=False
-        ),
-        models.HealthArticle(
-            slug="knee-arthritis-joint-replacement-guide",
-            title="Understanding Knee Osteoarthritis: Exercises vs. When Surgery is Needed",
-            category="Bone & Joint Health",
-            summary="Clear overview of knee cartilage degeneration stages, non-surgical relief, and modern robotic total knee replacement.",
-            symptoms="Morning joint stiffness, crepitus (crackling sounds in knees), pain while descending stairs, and bow-leg deformity.",
-            causes="Wear and tear of articular cartilage over age, previous meniscus injury, or hereditary predisposition.",
-            prevention="Maintain healthy BMI, low-impact cycling/swimming, and quadriceps strengthening exercises.",
-            when_to_see_doctor="Severe resting pain, inability to walk 100 meters without halting, or visible knee alignment changes.",
-            relevant_specialty="Orthopedics",
-            read_time="5 min read",
-            is_trending=True
-        )
-    ]
-    db.add_all(articles)
-    db.commit()
+    if db.query(models.HealthArticle).count() == 0:
+        articles = [
+            models.HealthArticle(
+                slug="dengue-prevention-and-care-indore",
+                title="Dengue Awareness & Platelet Care: What You Must Know in Malwa",
+                category="Seasonal infections",
+                summary="Essential medical guide on identifying early warning signs of dengue, platelet count monitoring, and hydration protocols.",
+                symptoms="High fever (103°F+), severe headache, retro-orbital pain (behind the eyes), joint aches, and petechial rashes.",
+                causes="Transmission via infected Aedes aegypti mosquitoes breeding in stagnant freshwater.",
+                prevention="Prevent water accumulation in coolers and flowerpots, use DEET mosquito repellents, and wear covered clothing.",
+                when_to_see_doctor="Seek emergency evaluation immediately if you observe persistent vomiting, severe abdominal pain, gum bleeding, or platelet drop below 50,000.",
+                relevant_specialty="General Medicine",
+                read_time="4 min read",
+                is_trending=True
+            ),
+            models.HealthArticle(
+                slug="cardiac-health-winter-alert",
+                title="Heart Health & Cold Weather: Managing Blood Pressure & Cardiac Strain",
+                category="Heart health",
+                summary="Understanding why cold weather constricts blood vessels, raises blood pressure, and increases cardiac workload.",
+                symptoms="Morning chest tightness, shortness of breath upon brisk walking, palpitations, or lightheadedness.",
+                causes="Vasoconstriction due to low ambient temperatures causing elevated systemic vascular resistance.",
+                prevention="Avoid vigorous early morning walks during peak cold; exercise indoors, monitor BP daily, and stay warm.",
+                when_to_see_doctor="Any chest pressure, crushing pain radiating to the left arm or jaw, or sudden breathlessness requires immediate emergency attention.",
+                relevant_specialty="Cardiology",
+                read_time="5 min read",
+                is_trending=True
+            ),
+            models.HealthArticle(
+                slug="diabetes-and-lifestyle-management",
+                title="Comprehensive Diabetes Management: Diet, HbA1c & Kidney Protection",
+                category="Diabetes",
+                summary="Practical guidelines for managing Type 2 diabetes, monitoring HbA1c every 3 months, and preventing diabetic retinopathy & nephropathy.",
+                symptoms="Frequent urination (polyuria), increased thirst (polydipsia), unexplained weight loss, and slow wound healing.",
+                causes="Insulin resistance and relative insulin deficiency compounded by sedentary lifestyle and high-glycemic diets.",
+                prevention="Balanced high-fiber meals, 45 minutes daily physical activity, and routine glycemic screening.",
+                when_to_see_doctor="Fasting blood glucose consistently > 140 mg/dL, foot ulcers, or visual blurriness.",
+                relevant_specialty="General Medicine",
+                read_time="6 min read",
+                is_trending=False
+            ),
+            models.HealthArticle(
+                slug="knee-arthritis-joint-replacement-guide",
+                title="Understanding Knee Osteoarthritis: Exercises vs. When Surgery is Needed",
+                category="Bone & Joint Health",
+                summary="Clear overview of knee cartilage degeneration stages, non-surgical relief, and modern robotic total knee replacement.",
+                symptoms="Morning joint stiffness, crepitus (crackling sounds in knees), pain while descending stairs, and bow-leg deformity.",
+                causes="Wear and tear of articular cartilage over age, previous meniscus injury, or hereditary predisposition.",
+                prevention="Maintain healthy BMI, low-impact cycling/swimming, and quadriceps strengthening exercises.",
+                when_to_see_doctor="Severe resting pain, inability to walk 100 meters without halting, or visible knee alignment changes.",
+                relevant_specialty="Orthopedics",
+                read_time="5 min read",
+                is_trending=True
+            )
+        ]
+        db.add_all(articles)
+        db.commit()
 
     # 9. Verified Reviews
-    reviews = [
-        models.Review(
-            user_id=patient_user.id,
-            hospital_id=1,
-            doctor_id=1,
-            rating=5.0,
-            cleanliness_rating=5.0,
-            staff_rating=5.0,
-            wait_time_rating=4.5,
-            review_text="Dr. Rajesh Verma at Medanta Indore provided exceptional clarity on my father's cardiac stent followup. Clean OPD, clear billing, and very helpful staff.",
-            is_verified_patient=True
-        ),
-        models.Review(
-            user_id=patient_user.id,
-            hospital_id=2,
-            doctor_id=3,
-            rating=4.8,
-            cleanliness_rating=4.5,
-            staff_rating=5.0,
-            wait_time_rating=4.0,
-            review_text="Bombay Hospital Indore has incredible emergency care. When my uncle experienced acute vertigo, the triage team acted within 4 minutes. Highly recommended.",
-            is_verified_patient=True
-        )
-    ]
-    db.add_all(reviews)
-    db.commit()
+    if db.query(models.Review).count() == 0 and hosp_objects and doc_objects:
+        h1 = hosp_objects[0].id
+        d1 = doc_objects[0].id
+        h2 = hosp_objects[1].id if len(hosp_objects) > 1 else h1
+        d2 = doc_objects[2].id if len(doc_objects) > 2 else d1
+        reviews = [
+            models.Review(
+                user_id=patient_user.id,
+                hospital_id=h1,
+                doctor_id=d1,
+                rating=5.0,
+                cleanliness_rating=5.0,
+                staff_rating=5.0,
+                wait_time_rating=4.5,
+                review_text="Dr. Rajesh Verma at Medanta Indore provided exceptional clarity on my father's cardiac stent followup. Clean OPD, clear billing, and very helpful staff.",
+                is_verified_patient=True
+            ),
+            models.Review(
+                user_id=patient_user.id,
+                hospital_id=h2,
+                doctor_id=d2,
+                rating=4.8,
+                cleanliness_rating=4.5,
+                staff_rating=5.0,
+                wait_time_rating=4.0,
+                review_text="Bombay Hospital Indore has incredible emergency care. When my uncle experienced acute vertigo, the triage team acted within 4 minutes. Highly recommended.",
+                is_verified_patient=True
+            )
+        ]
+        db.add_all(reviews)
+        db.commit()
 
     # 10. Notifications
-    notifs = [
-        models.Notification(
-            user_id=patient_user.id,
-            title="Appointment Confirmed",
-            message="Your appointment with Dr. Rajesh Verma at Medanta Super Speciality Hospital Indore is confirmed for 21 Sep 2026 at 11:30 AM.",
-            notification_type="appointment"
-        ),
-        models.Notification(
-            user_id=patient_user.id,
-            title="Healthcare Advisory: Dengue in Indore",
-            message="Municipal health bulletin: Free Dengue NS1 testing and platelet beds available at Choithram and Medanta emergency centers.",
-            notification_type="alert"
-        )
-    ]
-    db.add_all(notifs)
-    db.commit()
+    if db.query(models.Notification).count() == 0:
+        notifs = [
+            models.Notification(
+                user_id=patient_user.id,
+                title="Appointment Confirmed",
+                message="Your appointment with Dr. Rajesh Verma at Medanta Super Speciality Hospital Indore is confirmed for 21 Sep 2026 at 11:30 AM.",
+                notification_type="appointment"
+            ),
+            models.Notification(
+                user_id=patient_user.id,
+                title="Healthcare Advisory: Dengue in Indore",
+                message="Municipal health bulletin: Free Dengue NS1 testing and platelet beds available at Choithram and Medanta emergency centers.",
+                notification_type="alert"
+            )
+        ]
+        db.add_all(notifs)
+        db.commit()
 
     print("Database successfully seeded with realistic Indore healthcare dataset!")

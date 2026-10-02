@@ -31,6 +31,14 @@ def get_hospitals(
     sort_by: Optional[str] = "relevance",
     db: Session = Depends(get_db)
 ):
+    # Auto-seed if database has 0 hospitals
+    if db.query(models.Hospital).count() == 0:
+        try:
+            from app.seeds.seed_data import seed_database
+            seed_database(db)
+        except Exception as e:
+            print(f"Error during auto-seed in get_hospitals: {e}")
+
     query = db.query(models.Hospital)
 
     if city:
