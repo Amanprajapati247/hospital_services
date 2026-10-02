@@ -36,6 +36,7 @@ export const HospitalDetailPage: React.FC = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (id) {
       setLoading(true);
       api.getHospitalById(id)
@@ -47,18 +48,22 @@ export const HospitalDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center py-20 px-4 text-center">
         <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-xs text-slate-500 font-semibold">Loading verified hospital records...</p>
+        <p className="text-sm text-slate-600 font-semibold">Loading verified hospital records...</p>
       </div>
     );
   }
 
   if (!hospital) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-        <h2 className="text-xl font-bold text-slate-800">Hospital Not Found</h2>
-        <Link to="/hospitals" className="text-xs text-teal-600 font-bold mt-2 inline-block">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-800">Hospital Not Found</h2>
+        <p className="text-slate-500 text-sm mt-2 max-w-md">The hospital profile you are looking for may have been updated or does not exist.</p>
+        <Link to="/hospitals" className="mt-6 inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-bold text-sm shadow-md hover:bg-teal-700 transition">
           ← Return to Hospitals Directory
         </Link>
       </div>

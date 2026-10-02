@@ -192,8 +192,11 @@ def get_nearby_hospitals(
     return nearby
 
 @router.get("/{id}", response_model=schemas.HospitalDetailOut)
-def get_hospital_by_id(id: int, db: Session = Depends(get_db)):
-    h = db.query(models.Hospital).filter(models.Hospital.id == id).first()
+def get_hospital_by_id(id: str, db: Session = Depends(get_db)):
+    if id.isdigit():
+        h = db.query(models.Hospital).filter(models.Hospital.id == int(id)).first()
+    else:
+        h = db.query(models.Hospital).filter(models.Hospital.slug == id).first()
     if not h:
         raise HTTPException(status_code=404, detail="Hospital not found")
 

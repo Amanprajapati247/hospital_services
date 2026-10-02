@@ -4,6 +4,7 @@ import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { BottomNav } from './components/common/BottomNav';
 import { CompareDrawer } from './components/common/CompareDrawer';
+import { ScrollToTop } from './components/common/ScrollToTop';
 
 // Public Pages
 import { HomePage } from './pages/public/HomePage';
@@ -35,6 +36,7 @@ import { AdminDashboard } from './pages/dashboards/AdminDashboard';
 export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col justify-between bg-slate-50">
+      <ScrollToTop />
       <Navbar />
 
       <main className="flex-1">

@@ -12,6 +12,7 @@ export const DoctorDetailPage: React.FC = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (id) {
       setLoading(true);
       api.getDoctorById(id)
@@ -23,18 +24,19 @@ export const DoctorDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center py-20 px-4 text-center">
         <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-xs text-slate-500 font-semibold">Loading doctor profile...</p>
+        <p className="text-sm text-slate-600 font-semibold">Loading doctor profile...</p>
       </div>
     );
   }
 
   if (!doctor) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-        <h2 className="text-xl font-bold text-slate-800">Doctor Profile Not Found</h2>
-        <Link to="/doctors" className="text-xs text-teal-600 font-bold mt-2 inline-block">
+      <div className="min-h-[70vh] flex flex-col items-center justify-center py-20 px-4 text-center">
+        <h2 className="text-2xl font-bold text-slate-800">Doctor Profile Not Found</h2>
+        <p className="text-slate-500 text-sm mt-2 max-w-md">The doctor profile you requested could not be found or has been updated.</p>
+        <Link to="/doctors" className="mt-6 inline-flex items-center px-5 py-2.5 rounded-xl bg-teal-600 text-white font-bold text-sm shadow-md hover:bg-teal-700 transition">
           ← Return to Doctors Directory
         </Link>
       </div>
