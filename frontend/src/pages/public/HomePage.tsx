@@ -20,6 +20,12 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { HospitalListItem, Doctor, HealthArticle } from '../../types';
+import { 
+  RAW_HOSPITALS, 
+  RAW_DOCTORS, 
+  RAW_ARTICLES, 
+  RAW_SPECIALTIES 
+} from '../../data/rawHealthcareData';
 import { HospitalCard } from '../../components/common/HospitalCard';
 import { DoctorCard } from '../../components/common/DoctorCard';
 import { EmergencyBanner } from '../../components/common/EmergencyBanner';
@@ -28,10 +34,10 @@ import { AppointmentModal } from '../../components/common/AppointmentModal';
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [heroSearch, setHeroSearch] = useState('');
-  const [hospitals, setHospitals] = useState<HospitalListItem[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [articles, setArticles] = useState<HealthArticle[]>([]);
-  const [specialties, setSpecialties] = useState<any[]>([]);
+  const [hospitals, setHospitals] = useState<HospitalListItem[]>(RAW_HOSPITALS);
+  const [doctors, setDoctors] = useState<Doctor[]>(RAW_DOCTORS);
+  const [articles, setArticles] = useState<HealthArticle[]>(RAW_ARTICLES);
+  const [specialties, setSpecialties] = useState<any[]>(RAW_SPECIALTIES);
   
   // AI Interactive State on Homepage
   const [aiInput, setAiInput] = useState('');
@@ -46,11 +52,22 @@ export const HomePage: React.FC = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   useEffect(() => {
-    // Load initial showcase data
-    api.getHospitals({ city: 'Indore' }).then(setHospitals).catch(console.error);
-    api.getDoctors().then(setDoctors).catch(console.error);
-    api.getHealthArticles(undefined, true).then(setArticles).catch(console.error);
-    api.getSpecialties().then(setSpecialties).catch(console.error);
+    // Attempt live API update in background without blocking rendering
+    api.getHospitals({ city: 'Indore' }).then(res => {
+      if (Array.isArray(res) && res.length > 0) setHospitals(res);
+    }).catch(() => {});
+
+    api.getDoctors().then(res => {
+      if (Array.isArray(res) && res.length > 0) setDoctors(res);
+    }).catch(() => {});
+
+    api.getHealthArticles(undefined, true).then(res => {
+      if (Array.isArray(res) && res.length > 0) setArticles(res);
+    }).catch(() => {});
+
+    api.getSpecialties().then(res => {
+      if (Array.isArray(res) && res.length > 0) setSpecialties(res);
+    }).catch(() => {});
   }, []);
 
   const handleHeroSubmit = (e: React.FormEvent) => {

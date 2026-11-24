@@ -63,7 +63,7 @@ function getAuthHeader(): HeadersInit {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 3500): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 2500): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -91,7 +91,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export const api = {
   // Auth
   async login(email: string, password: string) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -100,7 +100,7 @@ export const api = {
   },
 
   async register(data: { email: string; password: string; full_name: string; phone?: string; role: string; city?: string }) {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -109,7 +109,7 @@ export const api = {
   },
 
   async registerHospital(data: any) {
-    const res = await fetch(`${API_BASE}/auth/register-hospital`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/register-hospital`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -180,7 +180,7 @@ export const api = {
       });
     }
     try {
-      const res = await fetch(`${API_BASE}/hospitals?${query.toString()}`);
+      const res = await fetchWithTimeout(`${API_BASE}/hospitals?${query.toString()}`);
       const data = await handleResponse<HospitalListItem[]>(res);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch (err) {
@@ -242,7 +242,7 @@ export const api = {
 
   async getHospitalById(id: number | string): Promise<HospitalDetail> {
     try {
-      const res = await fetch(`${API_BASE}/hospitals/${id}`);
+      const res = await fetchWithTimeout(`${API_BASE}/hospitals/${id}`);
       return await handleResponse<HospitalDetail>(res);
     } catch {
       const found = RAW_HOSPITALS.find(h => String(h.id) === String(id) || h.slug === id);
@@ -252,7 +252,7 @@ export const api = {
 
   async compareHospitals(ids: number[] | string[]): Promise<any[]> {
     try {
-      const res = await fetch(`${API_BASE}/hospitals/compare?ids=${ids.join(',')}`);
+      const res = await fetchWithTimeout(`${API_BASE}/hospitals/compare?ids=${ids.join(',')}`);
       const data = await handleResponse<any[]>(res);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch {
@@ -263,7 +263,7 @@ export const api = {
 
   async getNearbyHospitals(lat = 22.7196, lon = 75.8577): Promise<any[]> {
     try {
-      const res = await fetch(`${API_BASE}/hospitals/nearby?lat=${lat}&lon=${lon}`);
+      const res = await fetchWithTimeout(`${API_BASE}/hospitals/nearby?lat=${lat}&lon=${lon}`);
       const data = await handleResponse<any[]>(res);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch {
@@ -289,7 +289,7 @@ export const api = {
       });
     }
     try {
-      const res = await fetch(`${API_BASE}/doctors?${query.toString()}`);
+      const res = await fetchWithTimeout(`${API_BASE}/doctors?${query.toString()}`);
       const data = await handleResponse<Doctor[]>(res);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch (err) {
@@ -326,7 +326,7 @@ export const api = {
 
   async getDoctorById(id: number | string): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE}/doctors/${id}`);
+      const res = await fetchWithTimeout(`${API_BASE}/doctors/${id}`);
       return await handleResponse<any>(res);
     } catch {
       const found = RAW_DOCTORS.find(d => String(d.id) === String(id));
@@ -336,7 +336,7 @@ export const api = {
 
   async getSpecialties(): Promise<any[]> {
     try {
-      const res = await fetch(`${API_BASE}/doctors/specialties`);
+      const res = await fetchWithTimeout(`${API_BASE}/doctors/specialties`);
       const data = await handleResponse<any[]>(res);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch {
@@ -407,7 +407,7 @@ export const api = {
   },
 
   async updateAppointmentStatus(id: number, status: string, doctor_notes?: string): Promise<Appointment> {
-    const res = await fetch(`${API_BASE}/appointments/${id}/status`, {
+    const res = await fetchWithTimeout(`${API_BASE}/appointments/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ status, doctor_notes })
@@ -418,7 +418,7 @@ export const api = {
   // AI Health Assistant
   async chatHealthAi(message: string, preferred_city = 'Indore'): Promise<AiChatResponse> {
     try {
-      const res = await fetch(`${API_BASE}/ai/chat`, {
+      const res = await fetchWithTimeout(`${API_BASE}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, preferred_city })
@@ -463,7 +463,7 @@ export const api = {
   // Emergency Care
   async getEmergencyOverview(): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE}/emergency/overview`);
+      const res = await fetchWithTimeout(`${API_BASE}/emergency/overview`);
       const data = await handleResponse<any>(res);
       if (data && data.emergency_hospitals && data.emergency_hospitals.length > 0) return data;
     } catch {
@@ -474,7 +474,7 @@ export const api = {
 
   // Hospital Admin
   async getHospitalAdminDashboard(): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/dashboard`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/dashboard`, { headers: getAuthHeader() });
     return handleResponse<any>(res);
   },
 
@@ -486,7 +486,7 @@ export const api = {
     emergency_avail?: number;
     ventilator_avail?: number;
   }): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/beds`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/beds`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -496,7 +496,7 @@ export const api = {
 
   async updateWaitTimes(opd_wait_time: string, emergency_wait_time: string): Promise<any> {
     const query = new URLSearchParams({ opd_wait_time, emergency_wait_time });
-    const res = await fetch(`${API_BASE}/hospital-admin/wait-times?${query.toString()}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/wait-times?${query.toString()}`, {
       method: 'PUT',
       headers: getAuthHeader()
     });
@@ -504,12 +504,12 @@ export const api = {
   },
 
   async getHospitalDoctors(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/hospital-admin/doctors`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/doctors`, { headers: getAuthHeader() });
     return handleResponse<any[]>(res);
   },
 
   async addHospitalDoctor(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/doctors`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/doctors`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -518,12 +518,12 @@ export const api = {
   },
 
   async getHospitalAppointments(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/hospital-admin/appointments`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/appointments`, { headers: getAuthHeader() });
     return handleResponse<any[]>(res);
   },
 
   async updateHospitalAppointmentStatus(id: number, status: string, doctor_notes?: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/appointments/${id}/status`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/appointments/${id}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ status, doctor_notes })
@@ -532,7 +532,7 @@ export const api = {
   },
 
   async createHospitalAppointment(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/appointments`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/appointments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -541,12 +541,12 @@ export const api = {
   },
 
   async getHospitalServices(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/hospital-admin/services`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/services`, { headers: getAuthHeader() });
     return handleResponse<any[]>(res);
   },
 
   async addHospitalService(data: { name: string; category: string; charge: number; description?: string }): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/services`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/services`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -555,7 +555,7 @@ export const api = {
   },
 
   async updateHospitalService(id: number, data: { name?: string; category?: string; charge?: number; description?: string; is_available?: boolean }): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/services/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/services/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -564,7 +564,7 @@ export const api = {
   },
 
   async deleteHospitalService(id: number): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/services/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/services/${id}`, {
       method: 'DELETE',
       headers: getAuthHeader()
     });
@@ -572,12 +572,12 @@ export const api = {
   },
 
   async getHospitalProfile(): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/profile`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/profile`, { headers: getAuthHeader() });
     return handleResponse<any>(res);
   },
 
   async updateHospitalProfile(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/hospital-admin/profile`, {
+    const res = await fetchWithTimeout(`${API_BASE}/hospital-admin/profile`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -587,12 +587,12 @@ export const api = {
 
   // Doctor Portal
   async getDoctorDashboard(): Promise<any> {
-    const res = await fetch(`${API_BASE}/doctor-portal/dashboard`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/doctor-portal/dashboard`, { headers: getAuthHeader() });
     return handleResponse<any>(res);
   },
 
   async updateDoctorProfile(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/doctor-portal/profile`, {
+    const res = await fetchWithTimeout(`${API_BASE}/doctor-portal/profile`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -602,7 +602,7 @@ export const api = {
 
   async completeDoctorAppointment(id: number, doctor_notes: string): Promise<any> {
     const query = new URLSearchParams({ doctor_notes });
-    const res = await fetch(`${API_BASE}/doctor-portal/appointments/${id}/complete?${query.toString()}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/doctor-portal/appointments/${id}/complete?${query.toString()}`, {
       method: 'PATCH',
       headers: getAuthHeader()
     });
@@ -611,17 +611,17 @@ export const api = {
 
   // Patient Portal
   async getPatientDashboard(): Promise<any> {
-    const res = await fetch(`${API_BASE}/patient/dashboard`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/patient/dashboard`, { headers: getAuthHeader() });
     return handleResponse<any>(res);
   },
 
   async getFamilyMembers(): Promise<FamilyMember[]> {
-    const res = await fetch(`${API_BASE}/patient/family`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/patient/family`, { headers: getAuthHeader() });
     return handleResponse<FamilyMember[]>(res);
   },
 
   async addFamilyMember(data: any): Promise<FamilyMember> {
-    const res = await fetch(`${API_BASE}/patient/family`, {
+    const res = await fetchWithTimeout(`${API_BASE}/patient/family`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -630,7 +630,7 @@ export const api = {
   },
 
   async deleteFamilyMember(id: number): Promise<any> {
-    const res = await fetch(`${API_BASE}/patient/family/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/patient/family/${id}`, {
       method: 'DELETE',
       headers: getAuthHeader()
     });
@@ -638,7 +638,7 @@ export const api = {
   },
 
   async updatePatientProfile(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/patient/profile`, {
+    const res = await fetchWithTimeout(`${API_BASE}/patient/profile`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)
@@ -647,7 +647,7 @@ export const api = {
   },
 
   async toggleSaveHospital(id: number): Promise<any> {
-    const res = await fetch(`${API_BASE}/patient/saved/hospital/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/patient/saved/hospital/${id}`, {
       method: 'POST',
       headers: getAuthHeader()
     });
@@ -655,7 +655,7 @@ export const api = {
   },
 
   async toggleSaveDoctor(id: number): Promise<any> {
-    const res = await fetch(`${API_BASE}/patient/saved/doctor/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/patient/saved/doctor/${id}`, {
       method: 'POST',
       headers: getAuthHeader()
     });
@@ -664,18 +664,18 @@ export const api = {
 
   // Platform Admin
   async getAdminStats(): Promise<any> {
-    const res = await fetch(`${API_BASE}/admin/stats`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/admin/stats`, { headers: getAuthHeader() });
     return handleResponse<any>(res);
   },
 
   async getAdminHospitals(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/admin/hospitals`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/admin/hospitals`, { headers: getAuthHeader() });
     return handleResponse<any[]>(res);
   },
 
   async verifyHospital(id: number, status: string): Promise<any> {
     const query = new URLSearchParams({ status });
-    const res = await fetch(`${API_BASE}/admin/hospitals/${id}/verify?${query.toString()}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/hospitals/${id}/verify?${query.toString()}`, {
       method: 'PATCH',
       headers: getAuthHeader()
     });
@@ -683,12 +683,12 @@ export const api = {
   },
 
   async getAdminDoctors(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/admin/doctors`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/admin/doctors`, { headers: getAuthHeader() });
     return handleResponse<any[]>(res);
   },
 
   async getAuditLogs(): Promise<any[]> {
-    const res = await fetch(`${API_BASE}/admin/audit-logs`, { headers: getAuthHeader() });
+    const res = await fetchWithTimeout(`${API_BASE}/admin/audit-logs`, { headers: getAuthHeader() });
     return handleResponse<any[]>(res);
   },
 
@@ -738,7 +738,7 @@ export const api = {
     if (category) query.append('category', category);
     if (trending !== undefined) query.append('trending', String(trending));
     try {
-      const res = await fetch(`${API_BASE}/health/articles?${query.toString()}`);
+      const res = await fetchWithTimeout(`${API_BASE}/health/articles?${query.toString()}`);
       const data = await handleResponse<HealthArticle[]>(res);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch {
@@ -752,7 +752,7 @@ export const api = {
 
   async getHealthArticleBySlug(slug: string): Promise<HealthArticle> {
     try {
-      const res = await fetch(`${API_BASE}/health/articles/${slug}`);
+      const res = await fetchWithTimeout(`${API_BASE}/health/articles/${slug}`);
       return await handleResponse<HealthArticle>(res);
     } catch {
       const found = RAW_ARTICLES.find(a => a.slug === slug);
@@ -761,7 +761,7 @@ export const api = {
   },
 
   async postReview(data: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/reviews`, {
+    const res = await fetchWithTimeout(`${API_BASE}/reviews`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(data)

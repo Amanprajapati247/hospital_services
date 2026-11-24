@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { HospitalListItem, Doctor } from '../../types';
+import { RAW_HOSPITALS, RAW_DOCTORS } from '../../data/rawHealthcareData';
 import { HospitalCard } from '../../components/common/HospitalCard';
 import { DoctorCard } from '../../components/common/DoctorCard';
 import { MapViewer } from '../../components/common/MapViewer';
@@ -44,9 +45,34 @@ export const SearchPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'doctors' | 'hospitals'>(isDoctorRoute ? 'doctors' : 'all');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const [hospitals, setHospitals] = useState<HospitalListItem[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [hospitals, setHospitals] = useState<HospitalListItem[]>(() => {
+    const q = (initialQuery || initialSpecialty).toLowerCase().trim();
+    if (q) {
+      const filtered = RAW_HOSPITALS.filter(h => 
+        h.name.toLowerCase().includes(q) ||
+        h.area.toLowerCase().includes(q) ||
+        (h as any).departments?.some((d: any) => (typeof d === 'string' ? d : d.name).toLowerCase().includes(q)) ||
+        RAW_DOCTORS.some(doc => doc.specialization.toLowerCase().includes(q) && doc.affiliations?.some(a => a.hospital_id === h.id))
+      );
+      return filtered.length > 0 ? filtered : RAW_HOSPITALS;
+    }
+    return RAW_HOSPITALS;
+  });
+
+  const [doctors, setDoctors] = useState<Doctor[]>(() => {
+    const q = (initialQuery || initialSpecialty).toLowerCase().trim();
+    if (q) {
+      const filtered = RAW_DOCTORS.filter(d => 
+        d.name.toLowerCase().includes(q) ||
+        d.specialization.toLowerCase().includes(q) ||
+        d.qualification.toLowerCase().includes(q)
+      );
+      return filtered.length > 0 ? filtered : RAW_DOCTORS;
+    }
+    return RAW_DOCTORS;
+  });
+
+  const [loading, setLoading] = useState(false);
 
   // Booking modal
   const [selectedHospital, setSelectedHospital] = useState<HospitalListItem | null>(null);
@@ -73,7 +99,9 @@ export const SearchPage: React.FC = () => {
   }, [searchParams]);
 
   const fetchData = async () => {
-    setLoading(true);
+    if (hospitals.length === 0 && doctors.length === 0) {
+      setLoading(true);
+    }
     try {
       const [hospData, docData] = await Promise.all([
         api.getHospitals({
