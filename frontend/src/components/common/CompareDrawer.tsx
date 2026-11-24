@@ -9,7 +9,7 @@ export const CompareDrawer: React.FC = () => {
   if (selectedHospitals.length === 0) return null;
 
   return (
-    <div className="fixed bottom-14 md:bottom-6 left-4 right-4 md:left-auto md:right-8 z-40 max-w-xl bg-slate-900/95 backdrop-blur-md text-white rounded-2xl p-4 shadow-2xl border border-slate-700 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-8 z-40 max-w-xl bg-slate-900/95 backdrop-blur-md text-white rounded-2xl p-4 shadow-2xl border border-slate-700 animate-in slide-in-from-bottom duration-300">
       <div className="flex items-center justify-between pb-2 border-b border-slate-800">
         <div className="flex items-center space-x-2">
           <Layers className="w-4 h-4 text-teal-400" />

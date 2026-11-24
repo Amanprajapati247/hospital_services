@@ -146,7 +146,7 @@ export const AiAssistantPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-4 h-[calc(100vh-140px)] flex flex-col justify-between">
+    <div className="max-w-4xl mx-auto w-full px-3 py-4 sm:px-6 space-y-3 h-[calc(100dvh-5.5rem)] flex flex-col justify-between">
       
       {/* Header Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between shrink-0">
@@ -331,7 +331,7 @@ export const AiAssistantPage: React.FC = () => {
       </div>
 
       {/* Input Form */}
-      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="bg-white p-2 rounded-2xl border border-slate-200 shadow-md shrink-0 flex items-center gap-2">
+      <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="bg-white p-2 rounded-2xl border border-slate-200 shadow-md shrink-0 flex items-center gap-2 mb-16 md:mb-0">
         <button
           type="button"
           onClick={toggleVoice}

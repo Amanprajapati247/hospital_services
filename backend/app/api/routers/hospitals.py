@@ -49,11 +49,26 @@ def get_hospitals(
 
     if q:
         search_term = f"%{q.strip()}%"
-        query = query.filter(
-            (models.Hospital.name.ilike(search_term)) |
-            (models.Hospital.description.ilike(search_term)) |
-            (models.Hospital.area.ilike(search_term))
-        )
+        # Check matching departments or doctors
+        dept_hosp_ids = [dept.hospital_id for dept in db.query(models.HospitalDepartment).filter(models.HospitalDepartment.name.ilike(search_term)).all()]
+        doc_hosp_ids = [aff.hospital_id for aff in db.query(models.DoctorHospitalAffiliation).join(models.Doctor).filter(
+            (models.Doctor.specialization.ilike(search_term)) | (models.Doctor.name.ilike(search_term))
+        ).all()]
+        matched_hosp_ids = set(dept_hosp_ids + doc_hosp_ids)
+
+        if matched_hosp_ids:
+            query = query.filter(
+                (models.Hospital.name.ilike(search_term)) |
+                (models.Hospital.description.ilike(search_term)) |
+                (models.Hospital.area.ilike(search_term)) |
+                (models.Hospital.id.in_(matched_hosp_ids))
+            )
+        else:
+            query = query.filter(
+                (models.Hospital.name.ilike(search_term)) |
+                (models.Hospital.description.ilike(search_term)) |
+                (models.Hospital.area.ilike(search_term))
+            )
 
     if min_fee is not None:
         query = query.filter(models.Hospital.starting_fee >= min_fee)
@@ -72,8 +87,13 @@ def get_hospitals(
 
         # Check department / specialty filter
         dept_names = [d.name for d in h.departments]
-        if specialty and not any(specialty.lower() in dn.lower() for dn in dept_names):
-            continue
+        doc_specs = [aff.doctor.specialization for aff in h.doctor_affiliations if aff.doctor]
+        if specialty:
+            spec_lower = specialty.lower()
+            dept_match = any(spec_lower in dn.lower() for dn in dept_names)
+            doc_match = any(spec_lower in ds.lower() for ds in doc_specs)
+            if not (dept_match or doc_match):
+                continue
 
         icu_avail = h.bed_inventory.icu_avail if h.bed_inventory else 0
         gen_avail = h.bed_inventory.general_avail if h.bed_inventory else 0

@@ -4,7 +4,7 @@ import { AlertCircle, Phone, Navigation, Ambulance } from 'lucide-react';
 
 export const EmergencyBanner: React.FC = () => {
   return (
-    <section className="bg-gradient-to-r from-rose-700 via-rose-600 to-red-700 text-white shadow-lg">
+    <section className="bg-gradient-to-r from-rose-700 via-rose-600 to-red-700 text-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border border-rose-500/30">
       <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           

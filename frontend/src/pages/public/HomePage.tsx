@@ -375,12 +375,12 @@ export const HomePage: React.FC = () => {
 
       {/* 4. POPULAR SPECIALTIES */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Popular Medical Specialties</h2>
             <p className="text-xs text-slate-500">Consult with top-rated medical practitioners in Indore</p>
           </div>
-          <Link to="/doctors" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center">
+          <Link to="/doctors" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center self-start sm:self-auto">
             <span>View All Specialties</span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Link>
@@ -411,7 +411,7 @@ export const HomePage: React.FC = () => {
 
       {/* 5. TOP VERIFIED HOSPITALS IN INDORE */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Top Verified Hospitals in Indore</h2>
@@ -421,7 +421,7 @@ export const HomePage: React.FC = () => {
             </div>
             <p className="text-xs text-slate-500">Super-speciality centers with verified ICU status & Ayushman Bharat coverage</p>
           </div>
-          <Link to="/hospitals" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center">
+          <Link to="/hospitals" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center self-start sm:self-auto">
             <span>Explore All Hospitals</span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Link>
@@ -440,12 +440,12 @@ export const HomePage: React.FC = () => {
 
       {/* 6. DOCTORS AVAILABLE TODAY */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Doctors Available Today in Indore</h2>
             <p className="text-xs text-slate-500">Book confirmed OPD slots across leading hospital networks</p>
           </div>
-          <Link to="/doctors" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center">
+          <Link to="/doctors" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center self-start sm:self-auto">
             <span>Browse All Doctors</span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Link>
@@ -496,12 +496,12 @@ export const HomePage: React.FC = () => {
 
       {/* 8. TRENDING HEALTH TOPICS IN INDORE */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">Trending Health Guides in Indore</h2>
             <p className="text-xs text-slate-500">Verified medical education and disease awareness from certified sources</p>
           </div>
-          <Link to="/health" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center">
+          <Link to="/health" className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center self-start sm:self-auto">
             <span>Read Health Library</span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Link>

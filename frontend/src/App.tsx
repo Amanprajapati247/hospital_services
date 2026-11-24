@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { BottomNav } from './components/common/BottomNav';
@@ -34,12 +34,15 @@ import { DoctorDashboard } from './pages/dashboards/DoctorDashboard';
 import { AdminDashboard } from './pages/dashboards/AdminDashboard';
 
 export const App: React.FC = () => {
+  const location = useLocation();
+  const isAiAssistant = location.pathname === '/ai-assistant';
+
   return (
     <div className="min-h-screen flex flex-col justify-between bg-slate-50">
       <ScrollToTop />
       <Navbar />
 
-      <main className="flex-1">
+      <main className={`flex-1 ${isAiAssistant ? 'flex flex-col' : 'pb-20 md:pb-0'}`}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
@@ -75,7 +78,7 @@ export const App: React.FC = () => {
 
       <CompareDrawer />
       <BottomNav />
-      <Footer />
+      {!isAiAssistant && <Footer />}
     </div>
   );
 };

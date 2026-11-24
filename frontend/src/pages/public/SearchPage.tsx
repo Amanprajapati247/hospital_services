@@ -11,11 +11,14 @@ import {
   Activity, 
   X, 
   ChevronDown,
-  RotateCcw
+  RotateCcw,
+  Stethoscope,
+  Building2
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { HospitalListItem } from '../../types';
+import { HospitalListItem, Doctor } from '../../types';
 import { HospitalCard } from '../../components/common/HospitalCard';
+import { DoctorCard } from '../../components/common/DoctorCard';
 import { MapViewer } from '../../components/common/MapViewer';
 import { AppointmentModal } from '../../components/common/AppointmentModal';
 
@@ -25,6 +28,11 @@ export const SearchPage: React.FC = () => {
   const initialCity = searchParams.get('city') || 'Indore';
   const initialSpecialty = searchParams.get('specialty') || '';
 
+  const isDoctorRoute = typeof window !== 'undefined' && (
+    window.location.pathname.includes('/doctors') || 
+    Boolean(initialSpecialty)
+  );
+
   const [query, setQuery] = useState(initialQuery);
   const [selectedCity, setSelectedCity] = useState(initialCity);
   const [selectedArea, setSelectedArea] = useState('');
@@ -33,40 +41,68 @@ export const SearchPage: React.FC = () => {
   const [maxFee, setMaxFee] = useState<number | undefined>(undefined);
   const [sortBy, setSortBy] = useState('relevance');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [activeTab, setActiveTab] = useState<'all' | 'doctors' | 'hospitals'>(isDoctorRoute ? 'doctors' : 'all');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const [hospitals, setHospitals] = useState<HospitalListItem[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Booking modal
   const [selectedHospital, setSelectedHospital] = useState<HospitalListItem | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const areas = ['Vijay Nagar', 'Scheme 54', 'New Palasia', 'AB Road', 'Bhawarkua', 'Manik Bagh', 'Bhawrasla'];
   const specialties = ['Cardiology', 'Orthopedics', 'Neurology', 'Pediatrics', 'Gynecology', 'Dermatology', 'General Medicine', 'Gastroenterology'];
   const facilities = ['24x7 Emergency', 'ICU & Critical Care', 'NICU', 'Operation Theatres', 'CT Scan & MRI', 'Blood Bank', 'Dialysis Unit'];
 
-  const fetchHospitals = async () => {
+  // Sync URL search params if query/specialty in URL changes
+  useEffect(() => {
+    const qParam = searchParams.get('q');
+    const specParam = searchParams.get('specialty');
+    if (qParam !== null && qParam !== query) {
+      setQuery(qParam);
+    }
+    if (specParam !== null && specParam !== selectedSpecialty) {
+      setSelectedSpecialty(specParam);
+    }
+    if (window.location.pathname.includes('/doctors') || specParam) {
+      setActiveTab('doctors');
+    }
+  }, [searchParams]);
+
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await api.getHospitals({
-        q: query,
-        city: selectedCity,
-        area: selectedArea,
-        specialty: selectedSpecialty,
-        facility: selectedFacility,
-        max_fee: maxFee,
-        sort_by: sortBy
-      });
-      setHospitals(data);
+      const [hospData, docData] = await Promise.all([
+        api.getHospitals({
+          q: query,
+          city: selectedCity,
+          area: selectedArea,
+          specialty: selectedSpecialty,
+          facility: selectedFacility,
+          max_fee: maxFee,
+          sort_by: sortBy
+        }),
+        api.getDoctors({
+          q: query,
+          specialty: selectedSpecialty,
+          max_fee: maxFee,
+          sort_by: sortBy
+        })
+      ]);
+      setHospitals(hospData);
+      setDoctors(docData);
     } catch (err) {
-      console.error('Error fetching hospitals', err);
+      console.error('Error fetching healthcare data', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchHospitals();
+    fetchData();
   }, [query, selectedCity, selectedArea, selectedSpecialty, selectedFacility, maxFee, sortBy]);
 
   const resetFilters = () => {
@@ -78,6 +114,8 @@ export const SearchPage: React.FC = () => {
     setSortBy('relevance');
   };
 
+  const totalResults = hospitals.length + doctors.length;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-6">
       
@@ -86,10 +124,14 @@ export const SearchPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Hospital Discovery in {selectedCity}
+              {activeTab === 'doctors' 
+                ? `Doctors & Specialists in ${selectedCity}` 
+                : activeTab === 'hospitals'
+                ? `Hospitals & Clinics in ${selectedCity}`
+                : `Healthcare Discovery in ${selectedCity}`}
             </h1>
             <p className="text-xs text-slate-500">
-              Showing {hospitals.length} verified hospitals matching your medical requirements
+              Showing {doctors.length} verified doctors and {hospitals.length} hospitals matching your requirements
             </p>
           </div>
 
@@ -124,7 +166,7 @@ export const SearchPage: React.FC = () => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by hospital name, condition, treatment (e.g. Apollo, Medanta, Angioplasty)..."
+              placeholder="Search by doctor name, specialty, hospital, or symptoms (e.g. Dermatology, Medanta, Dr. Solanki)..."
               className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -144,13 +186,83 @@ export const SearchPage: React.FC = () => {
             </select>
           </div>
         </div>
+
+        {/* Category Tabs: All / Doctors / Hospitals */}
+        <div className="flex items-center space-x-2 pt-2 border-t border-slate-100 overflow-x-auto pb-1">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 ${
+              activeTab === 'all'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <span>All Results</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+              activeTab === 'all' ? 'bg-teal-700 text-teal-100' : 'bg-slate-200 text-slate-700'
+            }`}>
+              {totalResults}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('doctors')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 ${
+              activeTab === 'doctors'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Stethoscope className="w-3.5 h-3.5" />
+            <span>Doctors</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+              activeTab === 'doctors' ? 'bg-teal-700 text-teal-100' : 'bg-slate-200 text-slate-700'
+            }`}>
+              {doctors.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('hospitals')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 ${
+              activeTab === 'hospitals'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Hospitals</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+              activeTab === 'hospitals' ? 'bg-teal-700 text-teal-100' : 'bg-slate-200 text-slate-700'
+            }`}>
+              {hospitals.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Filter Toggle Button */}
+      <div className="lg:hidden flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-xs">
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className="flex items-center space-x-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-xl border border-teal-200 transition"
+        >
+          <Filter className="w-3.5 h-3.5" />
+          <span>{showMobileFilters ? 'Hide Filters' : 'Filter by Area & Specialty'}</span>
+          {(selectedArea || selectedSpecialty || selectedFacility || maxFee) && (
+            <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" />
+          )}
+        </button>
+        <span className="text-xs font-semibold text-slate-500">
+          {totalResults} Results
+        </span>
       </div>
 
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
         {/* Sticky Filter Sidebar */}
-        <aside className="lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-6 sticky top-24">
+        <aside className={`lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-6 lg:sticky lg:top-24 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center space-x-1.5 text-slate-900 font-extrabold text-sm">
               <Filter className="w-4 h-4 text-teal-600" />
@@ -268,37 +380,118 @@ export const SearchPage: React.FC = () => {
             <div className="h-[600px] w-full bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
               <MapViewer
                 hospitals={hospitals}
-                onMarkerClick={(h) => setSelectedHospital(h)}
+                onMarkerClick={(h) => {
+                  setSelectedHospital(h);
+                  setSelectedDoctor(null);
+                }}
               />
             </div>
-          ) : hospitals.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {hospitals.map((hospital) => (
-                <HospitalCard
-                  key={hospital.id}
-                  hospital={hospital}
-                  onBookClick={(h) => {
-                    setSelectedHospital(h);
-                    setIsBookingOpen(true);
-                  }}
-                />
-              ))}
-            </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
-                <Search className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-bold text-slate-800">No Hospitals Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No hospitals matched your current filter criteria. Try adjusting your area, fee range, or clearing active filters.
-              </p>
-              <button
-                onClick={resetFilters}
-                className="bg-teal-600 text-white text-xs font-bold px-4 py-2 rounded-xl"
-              >
-                Clear All Filters
-              </button>
+            <div className="space-y-8">
+              
+              {/* Doctor Results Section */}
+              {(activeTab === 'all' || activeTab === 'doctors') && doctors.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1.5 rounded-lg bg-teal-50 text-teal-700">
+                        <Stethoscope className="w-4 h-4" />
+                      </div>
+                      <h2 className="text-lg font-black text-slate-900">
+                        Available Doctors & Specialists ({doctors.length})
+                      </h2>
+                    </div>
+                    {activeTab === 'all' && (
+                      <button
+                        onClick={() => setActiveTab('doctors')}
+                        className="text-xs font-bold text-teal-700 hover:text-teal-800"
+                      >
+                        View all doctors →
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {doctors.map((doctor) => (
+                      <DoctorCard
+                        key={doctor.id}
+                        doctor={doctor}
+                        onBookClick={(d) => {
+                          setSelectedDoctor(d);
+                          setSelectedHospital(null);
+                          setIsBookingOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hospital Results Section */}
+              {(activeTab === 'all' || activeTab === 'hospitals') && hospitals.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1.5 rounded-lg bg-blue-50 text-blue-700">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <h2 className="text-lg font-black text-slate-900">
+                        Verified Hospitals & Clinics ({hospitals.length})
+                      </h2>
+                    </div>
+                    {activeTab === 'all' && (
+                      <button
+                        onClick={() => setActiveTab('hospitals')}
+                        className="text-xs font-bold text-teal-700 hover:text-teal-800"
+                      >
+                        View all hospitals →
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {hospitals.map((hospital) => (
+                      <HospitalCard
+                        key={hospital.id}
+                        hospital={hospital}
+                        onBookClick={(h) => {
+                          setSelectedHospital(h);
+                          setSelectedDoctor(null);
+                          setIsBookingOpen(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {((activeTab === 'all' && totalResults === 0) ||
+                (activeTab === 'doctors' && doctors.length === 0) ||
+                (activeTab === 'hospitals' && hospitals.length === 0)) && (
+                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    {activeTab === 'doctors'
+                      ? 'No Doctors Found'
+                      : activeTab === 'hospitals'
+                      ? 'No Hospitals Found'
+                      : 'No Matching Results Found'}
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    No results matched your current filter or search criteria for "{query || selectedSpecialty || 'selected filters'}". Try clearing filters or searching for another condition.
+                  </p>
+                  <button
+                    onClick={resetFilters}
+                    className="bg-teal-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-teal-700 transition"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+
             </div>
           )}
 
@@ -308,8 +501,13 @@ export const SearchPage: React.FC = () => {
 
       <AppointmentModal
         isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
+        onClose={() => {
+          setIsBookingOpen(false);
+          setSelectedHospital(null);
+          setSelectedDoctor(null);
+        }}
         hospital={selectedHospital}
+        doctor={selectedDoctor}
       />
 
     </div>

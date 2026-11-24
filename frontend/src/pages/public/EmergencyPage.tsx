@@ -86,7 +86,7 @@ export const EmergencyPage: React.FC = () => {
 
         {/* Emergency Hospitals with Live Bed Counters */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900">
                 24x7 Emergency Trauma Centers in Indore
@@ -95,7 +95,7 @@ export const EmergencyPage: React.FC = () => {
                 Hospitals with active emergency triage, round-the-clock intensive care units, and in-house doctors
               </p>
             </div>
-            <span className="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full self-start sm:self-auto shrink-0">
               Live Status Active
             </span>
           </div>

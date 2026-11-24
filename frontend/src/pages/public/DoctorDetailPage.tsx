@@ -129,14 +129,14 @@ export const DoctorDetailPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
-                    <div className="text-right">
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200 gap-2">
+                    <div className="text-left sm:text-right">
                       <span className="text-[10px] text-slate-400 block">Consultation</span>
                       <span className="text-base font-extrabold text-slate-900">₹{aff.consultation_fee}</span>
                     </div>
                     <button
                       onClick={() => setIsBookingOpen(true)}
-                      className="mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-xs"
+                      className="mt-0 sm:mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-xs shrink-0"
                     >
                       Book at this Hospital
                     </button>

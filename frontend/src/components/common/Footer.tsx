@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
                 <Sparkles className="w-5 h-5" />
               </div>
               <span className="text-xl font-black text-white tracking-tight">
-                CARECONNECT<span className="text-teal-400"> AI</span>
+                CareConnect
               </span>
             </Link>
             

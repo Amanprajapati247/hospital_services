@@ -81,17 +81,17 @@ export const HospitalDetailPage: React.FC = () => {
     <div className="space-y-8 pb-16">
       
       {/* Cover and Hero Header */}
-      <div className="relative bg-slate-900 text-white">
-        <div className="h-64 sm:h-80 w-full overflow-hidden opacity-40">
+      <div className="relative bg-slate-900 text-white min-h-[320px] sm:min-h-[360px] flex flex-col justify-end overflow-hidden">
+        <div className="absolute inset-0 w-full h-full overflow-hidden opacity-35">
           <img
             src={hospital.cover_image || hospital.image_url || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80'}
             alt={hospital.name}
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-900/40"></div>
 
-        <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             
             <div className="space-y-2 max-w-3xl">
@@ -116,21 +116,21 @@ export const HospitalDetailPage: React.FC = () => {
                 {hospital.name}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-1">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-slate-300 pt-1">
                 <div className="flex items-center space-x-1">
-                  <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                  <MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0" />
                   <span>{hospital.address}</span>
                 </div>
                 <div className="flex items-center space-x-1 bg-white/10 px-2 py-0.5 rounded-md">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
                   <span className="font-bold text-white">{hospital.rating.toFixed(1)}</span>
-                  <span className="text-slate-400">({hospital.review_count} patient reviews)</span>
+                  <span className="text-slate-400">({hospital.review_count} reviews)</span>
                 </div>
               </div>
             </div>
 
             {/* Quick CTAs Header */}
-            <div className="flex items-center space-x-3 shrink-0">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 shrink-0 pt-2 md:pt-0">
               <button
                 onClick={openDirections}
                 className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center space-x-1.5"
@@ -141,10 +141,10 @@ export const HospitalDetailPage: React.FC = () => {
 
               <a
                 href={`tel:${hospital.emergency_phone || hospital.phone}`}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-lg flex items-center space-x-1.5"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition shadow-lg flex items-center space-x-1.5"
               >
                 <Phone className="w-4 h-4" />
-                <span>Emergency: {hospital.emergency_phone || hospital.phone}</span>
+                <span>Emergency Desk</span>
               </a>
             </div>
 
@@ -154,7 +154,7 @@ export const HospitalDetailPage: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-slate-200">
-        <div className="flex space-x-8 text-xs font-bold uppercase tracking-wider overflow-x-auto">
+        <div className="flex space-x-6 sm:space-x-8 text-xs font-bold uppercase tracking-wider overflow-x-auto no-scrollbar">
           {[
             { id: 'overview', label: 'Hospital Overview' },
             { id: 'beds', label: `Live Beds (${bed?.general_avail || 0} Avail)` },
