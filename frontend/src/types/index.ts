@@ -223,11 +223,13 @@ export interface HealthArticle {
   symptoms?: string;
   causes?: string;
   prevention?: string;
-  when_to_see_doctor: string;
-  relevant_specialty: string;
-  sources: string;
-  disclaimer: string;
-  read_time: string;
-  is_trending: boolean;
-  created_at: string;
+  when_to_see_doctor?: string;
+  relevant_specialty?: string;
+  sources?: string | string[];
+  disclaimer?: string;
+  read_time?: string;
+  is_trending?: boolean;
+  created_at?: string;
+  content?: string;
+  key_takeaways?: string[];
 }
